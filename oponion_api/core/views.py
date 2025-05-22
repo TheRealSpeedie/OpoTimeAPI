@@ -8,6 +8,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from .serializer import MyTokenObtainPairSerializer, TaskSerializer, InvitationSerializer
 from .models import Task, Project, Invitation
 from django.shortcuts import get_object_or_404
+from django.contrib.auth.models import User
 
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
