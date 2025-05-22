@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: django-api
+    env: python
+    buildCommand: ""
+    startCommand: gunicorn oponion_api.wsgi:application
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: oponion_api.settings
