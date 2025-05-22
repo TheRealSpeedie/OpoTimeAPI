@@ -30,7 +30,7 @@ SECRET_KEY = 'django-insecure-@0mpa!=jdbc23+s!ltf43s1ftrh!j*43(#d-=v&!lt^6(k!_@0
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['opotimeapi.onrender.com', '127.0.0.1']
+ALLOWED_HOSTS = ['opotimeapi.onrender.com', '127.0.0.1', "http://localhost:3000", "https://opo-time.vercel.app/"]
 
 
 # Application definition
