@@ -152,6 +152,7 @@ class TaskView(APIView):
         else:
             tasks = Task.objects.all()
 
+        tasks = Task.objects.filter(assigned_to=request.user) 
         serializer = TaskSerializer(tasks, many=True)
         return Response(serializer.data)
 
@@ -203,6 +204,7 @@ class InvitationView(APIView):
         if accepted_only:
             invitations = invitations.filter(status="accepted")
 
+        invitations = invitations.objects.filter(from_user=request.user) 
         serializer = InvitationSerializer(invitations, many=True)
         return Response(serializer.data)
 
