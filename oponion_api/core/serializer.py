@@ -18,10 +18,8 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         if not user.is_active:
             raise serializers.ValidationError("User account is disabled.")
 
-        # Jetzt Standard-Verhalten nutzen
         data = super().validate({"username": user.username, "password": password})
-        data["username"] = user.username
-        data["email"] = user.email
+        data["id"] = user.id
         return data
 
 class TaskSerializer(serializers.ModelSerializer):

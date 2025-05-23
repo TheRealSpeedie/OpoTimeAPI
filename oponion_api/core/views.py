@@ -33,7 +33,7 @@ class RegisterView(APIView):
             return Response({"error": "Email already exists."}, status=400)
 
         user = User.objects.create_user(username=username, email=email, password=password)
-        return Response({"message": "User created successfully."}, status=201)
+        return Response({"message": "User created successfully.", "id": user.id}, status=201)
 
 class TimeEntryView(APIView):
     permission_classes = [IsAuthenticated]
