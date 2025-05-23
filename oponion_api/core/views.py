@@ -245,14 +245,22 @@ class UserSearchView(APIView):
 
     def get(self, request):
         query = request.query_params.get("q")
-        if not query:
-            return Response({"error": "Query parameter 'q' is required"}, status=400)
+        user_id = request.query_params.get("user_ID")
 
-        users = User.objects.filter(
-            username__icontains=query
-        ) | User.objects.filter(
-            email__icontains=query
-        )
+        if not query and not user_id:
+            return Response({"error": "Query parameter 'q' or 'user_ID' is required"}, status=400)
+
+        users = User.objects.none()
+
+        if query:
+            users = User.objects.filter(
+                username__icontains=query
+            ) | User.objects.filter(
+                email__icontains=query
+            )
+
+        if user_id:
+            users = users | User.objects.filter(id=user_id)
 
         users = users.distinct()
 
