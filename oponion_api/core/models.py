@@ -1,11 +1,20 @@
 from django.db import models
 from django.contrib.auth.models import User
+from datetime import timedelta
 
 # PROJECT
 class Project(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="owned_projects")
     name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    status = models.CharField(max_length=20, choices=[("active", "Active"), ("paused", "Paused"), ("completed", "Completed")], default="active")
+    progress = models.IntegerField(default=0)  # 0–100
+    total_time = models.DurationField(default=timedelta)
+    today_time = models.DurationField(default=timedelta)
+    deadline = models.DateField(null=True, blank=True)
     invited_users = models.ManyToManyField(User, related_name="invited_projects", blank=True)
+    color = models.CharField(max_length=7, default="#3B82F6")
+    is_timer_running = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name

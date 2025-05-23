@@ -35,10 +35,20 @@ class InvitationSerializer(serializers.ModelSerializer):
 
 
 class ProjectSerializer(serializers.ModelSerializer):
+    tasks = serializers.SerializerMethodField()
+    
     class Meta:
         model = Project
         fields = '__all__'
         read_only_fields = ['user']
+
+    def get_tasks(self, project):
+        total = Task.objects.filter(project=project).count()
+        completed = Task.objects.filter(project=project, status='done').count()
+        return {
+            "total": total,
+            "completed": completed
+        }
 
 class TimeEntrySerializer(serializers.ModelSerializer):
     class Meta:
