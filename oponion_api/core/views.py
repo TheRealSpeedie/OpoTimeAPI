@@ -5,8 +5,8 @@ from rest_framework import status
 from django.http import JsonResponse
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.views import TokenObtainPairView
-from .serializer import MyTokenObtainPairSerializer, TaskSerializer, InvitationSerializer, ProjectSerializer, TimeEntrySerializer
-from .models import Task, Project, Invitation, TimeEntry
+from .serializer import MyTokenObtainPairSerializer, TaskSerializer, InvitationSerializer, ProjectSerializer, TimeEntrySerializer, UserInformationSerializer
+from .models import Task, Project, Invitation, TimeEntry, UserInformation
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.models import User
 from datetime import datetime, timezone
@@ -33,6 +33,20 @@ class RegisterView(APIView):
             return Response({"error": "Email already exists."}, status=400)
 
         user = User.objects.create_user(username=username, email=email, password=password)
+
+        UserInformation.objects.create(
+            user=user,
+            first_name=request.data.get("first_name", ""),
+            last_name=request.data.get("last_name", ""),
+            phone=request.data.get("phone", ""),
+            job=request.data.get("job", ""),
+            location=request.data.get("location", ""),
+            timezone=request.data.get("timezone", ""),
+            languages=request.data.get("languages", ""),
+            bio=request.data.get("bio", ""),
+            joined_at=timezone.now()
+        )
+
         return Response({"message": "User created successfully.", "id": user.id}, status=201)
 
 class TimeEntryView(APIView):
@@ -276,3 +290,35 @@ class UserSearchView(APIView):
         ]
         return Response(data)
 
+class UserInformationView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            user_info = request.user.info 
+            serializer = UserInformationSerializer(user_info)
+            return Response(serializer.data)
+        except UserInformation.DoesNotExist:
+            return Response({"error": "User information not found."}, status=404)
+
+    def put(self, request):
+        try:
+            user_info = request.user.info
+            serializer = UserInformationSerializer(user_info, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=400)
+        except UserInformation.DoesNotExist:
+            return Response({"error": "User information not found."}, status=404)
+
+    def patch(self, request):
+        try:
+            user_info = request.user.info
+            serializer = UserInformationSerializer(user_info, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=400)
+        except UserInformation.DoesNotExist:
+            return Response({"error": "User information not found."}, status=404)

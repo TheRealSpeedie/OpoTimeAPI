@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Task, Invitation, Project, TimeEntry
+from .models import Task, Invitation, Project, TimeEntry, UserInformation
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth.models import User
 
@@ -55,5 +55,10 @@ class TimeEntrySerializer(serializers.ModelSerializer):
         model = TimeEntry
         fields = '__all__'
         read_only_fields = ['user']
+
+class UserInformationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserInformation
+        fields = '__all__'
 
 
