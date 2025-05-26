@@ -20,10 +20,39 @@ class Project(models.Model):
     def __str__(self):
         return self.name
 
+# TASK
+class Task(models.Model):
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="tasks")
+    assigned_to = models.ForeignKey(User, on_delete=models.CASCADE, related_name="tasks")
+    
+    text = models.CharField(max_length=255)
+    description = models.TextField(blank=True) 
+
+    STATUS_CHOICES = [
+        ("new", "New"),
+        ("in_progress", "In Progress"),
+        ("done", "Done"),
+    ]
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="new")
+
+    PRIORITY_CHOICES = [
+        ("high", "Hoch"),
+        ("medium", "Mittel"),
+        ("low", "Niedrig"),
+    ]
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default="medium")
+
+    due_date = models.DateField(null=True, blank=True) 
+    progress = models.PositiveIntegerField(default=0)  
+
+    def __str__(self):
+        return f"[{self.status} | {self.progress}%] {self.text} ({self.priority}) → {self.assigned_to.username}"
+
 # TIME ENTRY
 class TimeEntry(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="entries")
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="entries")
     timestamp = models.DateTimeField(auto_now_add=True)
     type = models.CharField(max_length=10, choices=[("start", "Start"), ("end", "End")])
 
@@ -46,22 +75,6 @@ class Invitation(models.Model):
 
     def __str__(self):
         return f"{self.from_user} → {self.to_user} | {self.project.name} | {self.status}"
-
-# TASK
-class Task(models.Model):
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="tasks")
-    assigned_to = models.ForeignKey(User, on_delete=models.CASCADE, related_name="tasks")
-    text = models.CharField(max_length=255)
-
-    STATUS_CHOICES = [
-        ("new", "New"),
-        ("in_progress", "In Progress"),
-        ("done", "Done"),
-    ]
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="new")
-
-    def __str__(self):
-        return f"[{self.status}] {self.text} → {self.assigned_to.username}"
 
 # USERINFORMATION
 class UserInformation(models.Model):

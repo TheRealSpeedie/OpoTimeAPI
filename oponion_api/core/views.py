@@ -10,6 +10,7 @@ from .models import Task, Project, Invitation, TimeEntry, UserInformation
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.models import User
 from datetime import datetime, timezone
+from django.utils import timezone
 
 
 class MyTokenObtainPairView(TokenObtainPairView):
@@ -35,13 +36,14 @@ class RegisterView(APIView):
         user = User.objects.create_user(username=username, email=email, password=password)
 
         UserInformation.objects.create(
+            email = email,
             user=user,
             first_name=request.data.get("first_name", ""),
             last_name=request.data.get("last_name", ""),
             phone=request.data.get("phone", ""),
             job=request.data.get("job", ""),
             location=request.data.get("location", ""),
-            timezone=request.data.get("timezone", ""),
+            user_timezone=request.data.get("timezone", ""),
             languages=request.data.get("languages", ""),
             bio=request.data.get("bio", ""),
             joined_at=timezone.now()
@@ -66,13 +68,13 @@ class TimeEntryView(APIView):
         try:
             since_dt = datetime.fromisoformat(since)
         except ValueError:
-            entries = TimeEntry.objects.filter(timestamp__gte=since_dt)
+            return Response({"error": "Invalid datetime format for 'since'"}, status=400)
 
         entries = TimeEntry.objects.filter(timestamp__gte=since_dt)
 
         if project_id:
-            entries = entries.filter(project__id=project_id)
-
+            entries = entries.filter(task__project__id=project_id) 
+        
         if user_id:
             entries = entries.filter(user__id=user_id)
         else:
@@ -155,13 +157,16 @@ class TaskView(APIView):
     def get(self, request):
         project_id = request.query_params.get("project_id")
         task_id = request.query_params.get("task_id")
+        priority = request.query_params.get("priority")
 
         if task_id:
             task = get_object_or_404(Task, id=task_id)
             serializer = TaskSerializer(task)
             return Response(serializer.data)
 
-        if project_id:
+        if priority:
+            tasks = Task.objects.filter(priority=priority)
+        elif project_id:
             tasks = Task.objects.filter(project__id=project_id)
         else:
             tasks = Task.objects.all()
