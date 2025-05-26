@@ -11,6 +11,8 @@ from django.shortcuts import get_object_or_404
 from django.contrib.auth.models import User
 from datetime import datetime, timezone
 from django.utils import timezone
+from rest_framework_simplejwt.views import TokenRefreshView
+from rest_framework.response import Response
 
 
 class MyTokenObtainPairView(TokenObtainPairView):
@@ -327,3 +329,14 @@ class UserInformationView(APIView):
             return Response(serializer.errors, status=400)
         except UserInformation.DoesNotExist:
             return Response({"error": "User information not found."}, status=404)
+
+class MyTokenRefreshView(TokenRefreshView):
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        return Response({
+            "access": data["access"],
+            "refresh": data.get("refresh", request.data.get("refresh"))  # <-- wichtig
+        })
