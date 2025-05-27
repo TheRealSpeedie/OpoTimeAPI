@@ -2,6 +2,7 @@ from rest_framework import serializers
 from .models import Task, Invitation, Project, TimeEntry, UserInformation
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
@@ -60,5 +61,11 @@ class UserInformationSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserInformation
         fields = '__all__'
+
+class UserSelectSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = get_user_model()
+        fields = ["id", "username", "email"] 
+
 
 

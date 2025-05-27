@@ -1,14 +1,16 @@
 from django.shortcuts import render
 from rest_framework.views import APIView
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
 from django.http import JsonResponse
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.views import TokenObtainPairView
-from .serializer import MyTokenObtainPairSerializer, TaskSerializer, InvitationSerializer, ProjectSerializer, TimeEntrySerializer, UserInformationSerializer
+from .serializer import MyTokenObtainPairSerializer, TaskSerializer, InvitationSerializer, ProjectSerializer, TimeEntrySerializer, UserInformationSerializer, UserSelectSerializer
 from .models import Task, Project, Invitation, TimeEntry, UserInformation
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from datetime import datetime, timezone
 from django.utils import timezone
 from rest_framework_simplejwt.views import TokenRefreshView
@@ -340,3 +342,10 @@ class MyTokenRefreshView(TokenRefreshView):
             "access": data["access"],
             "refresh": data.get("refresh", request.data.get("refresh"))  # <-- wichtig
         })
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def list_invitable_users(request):
+    users = User.objects.exclude(id=request.user.id)
+    serializer = UserSelectSerializer(users, many=True)
+    return Response(serializer.data)
