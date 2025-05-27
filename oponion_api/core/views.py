@@ -232,7 +232,7 @@ class InvitationView(APIView):
         return Response(serializer.data)
 
     def post(self, request):
-        project_id = request.data.get("project")
+        project_id = request.data.get("project_id")
         to_user_id = request.data.get("to_user")
 
         if not project_id or not to_user_id:
