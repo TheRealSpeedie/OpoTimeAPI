@@ -15,6 +15,7 @@ from datetime import datetime, timezone
 from django.utils import timezone
 from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework.response import Response
+from .utils import send_invitation_email
 
 
 class MyTokenObtainPairView(TokenObtainPairView):
@@ -349,3 +350,31 @@ def list_invitable_users(request):
     users = User.objects.exclude(id=request.user.id)
     serializer = UserSelectSerializer(users, many=True)
     return Response(serializer.data)
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def invite_user(request):
+    to_user_id = request.data.get("to_user_id")
+    project_id = request.data.get("project_id")
+
+    if not to_user_id or not project_id:
+        return Response({"error": "Fehlende Daten"}, status=400)
+
+    User = get_user_model()
+    try:
+        to_user = User.objects.get(id=to_user_id)
+        project = Project.objects.get(id=project_id)
+    except User.DoesNotExist:
+        return Response({"error": "Benutzer nicht gefunden"}, status=404)
+    except Project.DoesNotExist:
+        return Response({"error": "Projekt nicht gefunden"}, status=404)
+
+    invitation = Invitation.objects.create(
+        from_user=request.user,
+        to_user=to_user,
+        project=project
+    )
+
+    send_invitation_email(invitation)
+
+    return Response({"message": "Einladung gesendet"})

@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from datetime import timedelta
 from django.utils import timezone
+import uuid
 
 # PROJECT
 class Project(models.Model):
@@ -65,7 +66,7 @@ class Invitation(models.Model):
     to_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="received_invitations")
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="invitations")
     timestamp = models.DateTimeField(auto_now_add=True)
-    
+    token = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     STATUS_CHOICES = [
         ("pending", "Pending"),
         ("accepted", "Accepted"),
