@@ -385,9 +385,36 @@ def confirm_invitation(request, token):
         invitation = Invitation.objects.get(token=token, status='pending')
         invitation.status = "accepted"
         invitation.save()
-        
+
         invitation.project.invited_users.add(invitation.to_user)
 
         return Response({"message": "Einladung erfolgreich bestätigt."})
     except Invitation.DoesNotExist:
         return Response({"error": "Ungültiger oder abgelaufener Einladungstoken."}, status=404)
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def invited_users_with_status(request, project_id):
+    try:
+        project = Project.objects.get(id=project_id)
+    except Project.DoesNotExist:
+        return Response({"error": "Projekt nicht gefunden."}, status=404)
+
+    invited_users = project.invited_users.all()
+
+    result = []
+    for user in invited_users:
+        try:
+            invitation = Invitation.objects.get(project=project, to_user=user)
+            status = invitation.status
+        except Invitation.DoesNotExist:
+            status = "unbekannt"
+
+        result.append({
+            "id": user.id,
+            "email": user.email,
+            "name": user.username,
+            "invitation_status": status
+        })
+
+    return Response(result)

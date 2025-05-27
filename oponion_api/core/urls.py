@@ -1,6 +1,6 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
-from .views import RegisterView, TimeEntryView, MyTokenObtainPairView, ProjectsView, TaskView, InvitationView, UserSearchView, UserInformationView, MyTokenRefreshView, list_invitable_users, invite_user, confirm_invitation 
+from .views import RegisterView, TimeEntryView, MyTokenObtainPairView, ProjectsView, TaskView, InvitationView, UserSearchView, UserInformationView, MyTokenRefreshView, list_invitable_users, invite_user, confirm_invitation, invited_users_with_status 
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 urlpatterns = [
@@ -18,4 +18,5 @@ urlpatterns = [
     path('info/', UserInformationView.as_view()),
     path("invitations/send/", invite_user, name="invite-user"),
     path("invitations/confirm/<uuid:token>/", confirm_invitation, name="confirm-invitation"),
+    path("projects/<int:project_id>/invited-users/", invited_users_with_status),
 ]
