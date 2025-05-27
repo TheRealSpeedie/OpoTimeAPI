@@ -378,3 +378,16 @@ def invite_user(request):
     send_invitation_email(invitation)
 
     return Response({"message": "Einladung gesendet"})
+
+@api_view(["GET"])
+def confirm_invitation(request, token):
+    try:
+        invitation = Invitation.objects.get(token=token, status='pending')
+        invitation.status = "accepted"
+        invitation.save()
+        
+        invitation.project.invited_users.add(invitation.to_user)
+
+        return Response({"message": "Einladung erfolgreich bestätigt."})
+    except Invitation.DoesNotExist:
+        return Response({"error": "Ungültiger oder abgelaufener Einladungstoken."}, status=404)
