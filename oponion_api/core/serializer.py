@@ -62,3 +62,29 @@ class UserInformationSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class MeetingSerializer(serializers.ModelSerializer):
+    creator = serializers.ReadOnlyField(source='creator.id')
+    invited_users = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=User.objects.all()
+    )
+
+    class Meta:
+        model = Meeting
+        fields = ['id', 'creator', 'invited_users', 'text', 'from_date', 'to_date']
+
+    def validate(self, data):
+        if data['to_date'] <= data['from_date']:
+            raise serializers.ValidationError("„bis“ muss nach „von“ liegen.")
+        return data
+
+    def create(self, validated_data):
+        invited = validated_data.pop('invited_users', [])
+        meeting = Meeting.objects.create(
+            creator=self.context['request'].user,
+            **validated_data
+        )
+        meeting.invited_users.set(invited)
+        return meeting
+
+

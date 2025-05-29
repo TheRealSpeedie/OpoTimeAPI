@@ -66,6 +66,7 @@ class Task(models.Model):
 # USERINFORMATION
 class UserInformation(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='info')
+    username = models.CharField(max_length=50)
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
     email = models.EmailField(unique=True)
@@ -80,3 +81,14 @@ class UserInformation(models.Model):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
+
+# MEETING
+class Meeting(models.Model):
+    creator = models.ForeignKey(User, related_name='created_meetings', on_delete=models.CASCADE)
+    invited_users = models.ManyToManyField(User, related_name='invited_meetings', blank=True)
+    text = models.CharField(max_length=255)
+    from_date = models.DateTimeField()
+    to_date = models.DateTimeField()
+
+    def __str__(self):
+        return f"{self.text} ({self.from_date} - {self.to_date})"
