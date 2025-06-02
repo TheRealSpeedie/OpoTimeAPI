@@ -194,7 +194,7 @@ class TaskView(APIView):
         else:
             tasks = Task.objects.all()
 
-        tasks = Task.filter(assigned_to=request.user) 
+        tasks = tasks.filter(assigned_to=request.user) 
         serializer = TaskSerializer(tasks, many=True)
         return Response(serializer.data)
 
