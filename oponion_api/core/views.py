@@ -6,8 +6,9 @@ from rest_framework import status
 from django.http import JsonResponse
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.views import TokenObtainPairView
-from .serializer import MyTokenObtainPairSerializer, TaskSerializer, InvitationSerializer, ProjectSerializer, TimeEntrySerializer, UserInformationSerializer, UserSelectSerializer
-from .models import Task, Project, Invitation, TimeEntry, UserInformation
+from .serializer import MyTokenObtainPairSerializer, TaskSerializer, InvitationSerializer, ProjectSerializer, TimeEntrySerializer, UserInformationSerializer, UserSelectSerializer, MeetingSerializer
+from .models import Task, Project, Invitation, TimeEntry, UserInformation, Meeting
+
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.models import User
 from django.contrib.auth import get_user_model
@@ -16,6 +17,14 @@ from django.utils import timezone
 from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework.response import Response
 from .utils import send_invitation_email
+
+from django.utils import timezone
+from rest_framework_simplejwt.views import TokenRefreshView
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.response import Response
+from rest_framework.parsers import MultiPartParser, FormParser
+from .utils import send_invitation_email
+
 
 
 class MyTokenObtainPairView(TokenObtainPairView):
@@ -54,7 +63,13 @@ class RegisterView(APIView):
             joined_at=timezone.now()
         )
 
-        return Response({"message": "User created successfully.", "id": user.id}, status=201)
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            "message": "User created successfully.",
+            "id": user.id,
+            "refresh": str(refresh),
+            "access": str(refresh.access_token)
+        }, status=201)
 
 class TimeEntryView(APIView):
     permission_classes = [IsAuthenticated]
@@ -302,6 +317,7 @@ class UserSearchView(APIView):
 
 class UserInformationView(APIView):
     permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
 
     def get(self, request):
         try:
@@ -343,6 +359,60 @@ class MyTokenRefreshView(TokenRefreshView):
             "access": data["access"],
             "refresh": data.get("refresh", request.data.get("refresh"))  # <-- wichtig
         })
+
+class MeetingView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        meeting_id = request.query_params.get("meeting_id")
+
+        if meeting_id:
+            meeting = get_object_or_404(Meeting, id=meeting_id)
+            if meeting.creator != request.user and request.user not in meeting.invited_users.all():
+                return Response({"error": "Not authorized to view this meeting."}, status=403)
+            serializer = MeetingSerializer(meeting)
+            return Response(serializer.data)
+
+        meetings = Meeting.objects.filter(
+            models.Q(creator=request.user) | models.Q(invited_users=request.user)
+        ).distinct()
+
+        serializer = MeetingSerializer(meetings, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = MeetingSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+
+    def patch(self, request):
+        meeting_id = request.data.get("meeting_id")
+        if not meeting_id:
+            return Response({"error": "meeting_id required"}, status=400)
+
+        meeting = get_object_or_404(Meeting, id=meeting_id)
+        if meeting.creator != request.user:
+            return Response({"error": "Only the creator can edit this meeting."}, status=403)
+
+        serializer = MeetingSerializer(meeting, data=request.data, partial=True, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Meeting updated successfully."})
+        return Response(serializer.errors, status=400)
+
+    def delete(self, request):
+        meeting_id = request.query_params.get("meeting_id")
+        if not meeting_id:
+            return Response({"error": "meeting_id required"}, status=400)
+
+        meeting = get_object_or_404(Meeting, id=meeting_id)
+        if meeting.creator != request.user:
+            return Response({"error": "Only the creator can delete this meeting."}, status=403)
+
+        meeting.delete()
+        return Response({"message": "Meeting deleted successfully."}, status=204)
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
@@ -418,3 +488,21 @@ def invited_users_with_status(request, project_id):
         })
 
     return Response(result)
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def reset_password(request):
+    old_password = request.data.get("old_password")
+    new_password = request.data.get("new_password")
+
+    if not old_password or not new_password:
+        return Response({"error": "old_password und new_password sind erforderlich."}, status=400)
+
+    user = request.user
+    if not user.check_password(old_password):
+        return Response({"error": "Das alte Passwort ist falsch."}, status=403)
+
+    user.set_password(new_password)
+    user.save()
+    return Response({"message": "Passwort wurde erfolgreich geändert."})
+
