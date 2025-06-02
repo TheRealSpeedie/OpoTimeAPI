@@ -104,7 +104,15 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = "starstablehorse11@gmail.com"
+EMAIL_HOST_PASSWORD = "mqbj lymq tazf xnja" 
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
+FRONTEND_URL = "http://localhost:3000"
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
