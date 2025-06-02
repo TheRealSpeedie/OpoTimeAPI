@@ -25,6 +25,9 @@ from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from .utils import send_invitation_email
 
+import cloudinary
+import cloudinary.uploader
+
 
 
 class MyTokenObtainPairView(TokenObtainPairView):
@@ -505,4 +508,23 @@ def reset_password(request):
     user.set_password(new_password)
     user.save()
     return Response({"message": "Passwort wurde erfolgreich geändert."})
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def upload_profile_picture(request):
+    file = request.FILES.get('file')
+    if not file:
+        return Response({'error': 'Kein Bild erhalten.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    result = cloudinary.uploader.upload(file, folder='profile_pics')
+
+    image_url = result.get('secure_url')
+    if not image_url:
+        return Response({'error': 'Fehler beim Upload'}, status=500)
+
+    user_info = request.user.info
+    user_info.profile_picture = image_url
+    user_info.save()
+
+    return Response({'imageUrl': image_url})
 

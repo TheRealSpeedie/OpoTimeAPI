@@ -15,6 +15,10 @@ import os
 from dotenv import load_dotenv
 from datetime import timedelta
 
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
+
 load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -49,6 +53,19 @@ INSTALLED_APPS = [
     'core',
     'corsheaders'
 ]
+
+
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.getenv('CLOUDNAME'),
+    'API_KEY': os.getenv('CLOUDKEY'),
+    'API_SECRET': os.getenv('CLOUDSECRET'),
+}
+
+cloudinary.config(
+    cloud_name=os.getenv('CLOUDNAME'),
+    api_key=os.getenv('CLOUDKEY'),
+    api_secret=os.getenv('CLOUDSECRET')
+)
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
