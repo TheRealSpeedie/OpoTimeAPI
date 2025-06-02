@@ -106,3 +106,14 @@ class Meeting(models.Model):
 
     def __str__(self):
         return f"{self.text} ({self.from_date} - {self.to_date})"
+
+# USERIMAGE
+class UserImage(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="images")
+    image_url = models.URLField()
+    image_id = models.CharField(max_length=200)  # Cloudinary public_id
+    type = models.CharField(max_length=50, choices=[("profile", "Profile"), ("background", "Background")])
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.type}"

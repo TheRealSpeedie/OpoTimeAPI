@@ -6,8 +6,8 @@ from rest_framework import status
 from django.http import JsonResponse
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.views import TokenObtainPairView
-from .serializer import MyTokenObtainPairSerializer, TaskSerializer, InvitationSerializer, ProjectSerializer, TimeEntrySerializer, UserInformationSerializer, UserSelectSerializer, MeetingSerializer
-from .models import Task, Project, Invitation, TimeEntry, UserInformation, Meeting
+from .serializer import MyTokenObtainPairSerializer, TaskSerializer, InvitationSerializer, ProjectSerializer, TimeEntrySerializer, UserInformationSerializer, UserSelectSerializer, MeetingSerializer, UserImageSerializer
+from .models import Task, Project, Invitation, TimeEntry, UserInformation, Meeting, UserImage
 
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.models import User
@@ -509,22 +509,61 @@ def reset_password(request):
     user.save()
     return Response({"message": "Passwort wurde erfolgreich geändert."})
 
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def upload_profile_picture(request):
-    file = request.FILES.get('file')
-    if not file:
-        return Response({'error': 'Kein Bild erhalten.'}, status=status.HTTP_400_BAD_REQUEST)
+class UserImageView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
 
-    result = cloudinary.uploader.upload(file, folder='profile_pics')
+    def get(self, request):
+        image_type = request.query_params.get("type")  # e.g. profile, background
+        if image_type:
+            image = UserImage.objects.filter(user=request.user, type=image_type).last()
+            if not image:
+                return Response({"error": "Image not found"}, status=404)
+            serializer = UserImageSerializer(image)
+            return Response(serializer.data)
 
-    image_url = result.get('secure_url')
-    if not image_url:
-        return Response({'error': 'Fehler beim Upload'}, status=500)
+        images = UserImage.objects.filter(user=request.user)
+        serializer = UserImageSerializer(images, many=True)
+        return Response(serializer.data)
 
-    user_info = request.user.info
-    user_info.profile_picture = image_url
-    user_info.save()
+    def post(self, request):
+        file = request.FILES.get("file")
+        image_type = request.data.get("type")
 
-    return Response({'imageUrl': image_url})
+        if not file or not image_type:
+            return Response({"error": "file and type are required"}, status=400)
+
+        result = cloudinary.uploader.upload(file, folder='user_images')
+        image = UserImage.objects.create(
+            user=request.user,
+            image_url=result["secure_url"],
+            image_id=result["public_id"],
+            type=image_type
+        )
+        serializer = UserImageSerializer(image)
+        return Response(serializer.data, status=201)
+
+    def patch(self, request):
+        image_id = request.data.get("image_id")
+        new_type = request.data.get("type")
+
+        if not image_id or not new_type:
+            return Response({"error": "image_id and type required"}, status=400)
+
+        image = get_object_or_404(UserImage, user=request.user, image_id=image_id)
+        image.type = new_type
+        image.save()
+        return Response({"message": "Image updated successfully"})
+
+    def delete(self, request):
+        image_id = request.query_params.get("image_id")
+        if not image_id:
+            return Response({"error": "image_id required"}, status=400)
+
+        image = get_object_or_404(UserImage, user=request.user, image_id=image_id)
+
+        cloudinary.uploader.destroy(image.image_id)
+        image.delete()
+        return Response({"message": "Image deleted successfully."}, status=204)
+
 

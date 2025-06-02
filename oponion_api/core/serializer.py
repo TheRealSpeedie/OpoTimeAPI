@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Task, Invitation, Project, TimeEntry, UserInformation, Meeting
+from .models import Task, Invitation, Project, TimeEntry, UserInformation, Meeting, UserImage
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth.models import User
 from django.contrib.auth import get_user_model
@@ -68,6 +68,11 @@ class UserSelectSerializer(serializers.ModelSerializer):
         fields = ["id", "username", "email"] 
 
 
+class UserImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserImage
+        fields = '__all__'
+        read_only_fields = ('user', 'uploaded_at')
 
 class MeetingSerializer(serializers.ModelSerializer):
     creator = serializers.ReadOnlyField(source='creator.id')
