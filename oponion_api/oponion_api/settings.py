@@ -33,7 +33,7 @@ DEBUG = True
 ALLOWED_HOSTS = ['opotimeapi.onrender.com', '127.0.0.1', "http://localhost:3000", "https://opo-time.vercel.app/"]
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'staticfiles', 'media')
 
 # Application definition
 

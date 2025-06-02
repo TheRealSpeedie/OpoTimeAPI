@@ -4,6 +4,9 @@ from .views import RegisterView, TimeEntryView, MyTokenObtainPairView, ProjectsV
 
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
+from django.conf import settings
+from django.conf.urls.static import static
+
 urlpatterns = [
     path('schema/', SpectacularAPIView.as_view(), name='schema'),
     path('docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
@@ -22,4 +25,4 @@ urlpatterns = [
     path("invitations/confirm/<uuid:token>/", confirm_invitation, name="confirm-invitation"),
     path("projects/<int:project_id>/invited-users/", invited_users_with_status),
     path("password/reset", reset_password),
-]
+] 
