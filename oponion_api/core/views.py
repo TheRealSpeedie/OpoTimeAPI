@@ -541,10 +541,16 @@ class ShiftView(APIView):
 
     def get(self, request):
         shift_id = request.query_params.get('shift_id')
-        
+        of_day = request.query_params.get('of_day')
+
         if shift_id:
             shift = get_object_or_404(Shift, id=shift_id, user=request.user)
             serializer = ShiftSerializer(shift)
+            return Response(serializer.data)
+
+        if of_day:
+            shifts = Shift.objects.filter(user=request.user, start_time__date=of_day)
+            serializer = ShiftSerializer(shifts, many=True)
             return Response(serializer.data)
         
         shifts = Shift.objects.filter(user=request.user)
