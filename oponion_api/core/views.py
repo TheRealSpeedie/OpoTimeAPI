@@ -25,8 +25,7 @@ from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from .utils import send_invitation_email
 
-import cloudinary
-import cloudinary.uploader
+import base64
 
 
 
@@ -519,12 +518,25 @@ class UserImageView(APIView):
             image = UserImage.objects.filter(user=request.user, type=image_type).last()
             if not image:
                 return Response({"error": "Image not found"}, status=404)
-            serializer = UserImageSerializer(image)
-            return Response(serializer.data)
+            
+            # Return base64 encoded image for the frontend
+            base64_image = base64.b64encode(image.image_data).decode('utf-8')
+            return Response({
+                "image": f"data:{image.content_type};base64,{base64_image}",
+                "type": image.type,
+                "uploaded_at": image.uploaded_at
+            })
 
         images = UserImage.objects.filter(user=request.user)
-        serializer = UserImageSerializer(images, many=True)
-        return Response(serializer.data)
+        image_data = []
+        for image in images:
+            base64_image = base64.b64encode(image.image_data).decode('utf-8')
+            image_data.append({
+                "image": f"data:{image.content_type};base64,{base64_image}",
+                "type": image.type,
+                "uploaded_at": image.uploaded_at
+            })
+        return Response(image_data)
 
     def post(self, request):
         file = request.FILES.get("file")
@@ -533,36 +545,48 @@ class UserImageView(APIView):
         if not file or not image_type:
             return Response({"error": "file and type are required"}, status=400)
 
-        result = cloudinary.uploader.upload(file, folder='user_images')
+        # Read the binary data from the uploaded file
+        image_data = file.read()
+        content_type = file.content_type
+
+        # Save the image to the database
         image = UserImage.objects.create(
             user=request.user,
-            image_url=result["secure_url"],
-            image_id=result["public_id"],
+            image_data=image_data,
+            content_type=content_type,
             type=image_type
         )
-        serializer = UserImageSerializer(image)
-        return Response(serializer.data, status=201)
+
+        # Return base64 encoded image for immediate use in frontend
+        base64_image = base64.b64encode(image_data).decode('utf-8')
+        return Response({
+            "image": f"data:{content_type};base64,{base64_image}",
+            "type": image.type,
+            "uploaded_at": image.uploaded_at
+        }, status=201)
 
     def patch(self, request):
-        image_id = request.data.get("image_id")
-        new_type = request.data.get("type")
+        image_type = request.data.get("type")
+        if not image_type:
+            return Response({"error": "type required"}, status=400)
 
-        if not image_id or not new_type:
-            return Response({"error": "image_id and type required"}, status=400)
-
-        image = get_object_or_404(UserImage, user=request.user, image_id=image_id)
-        image.type = new_type
+        image = UserImage.objects.filter(user=request.user, type=image_type).last()
+        if not image:
+            return Response({"error": "Image not found"}, status=404)
+            
+        image.type = image_type
         image.save()
         return Response({"message": "Image updated successfully"})
 
     def delete(self, request):
-        image_id = request.query_params.get("image_id")
-        if not image_id:
-            return Response({"error": "image_id required"}, status=400)
+        image_type = request.query_params.get("type")
+        if not image_type:
+            return Response({"error": "type required"}, status=400)
 
-        image = get_object_or_404(UserImage, user=request.user, image_id=image_id)
+        image = UserImage.objects.filter(user=request.user, type=image_type).last()
+        if not image:
+            return Response({"error": "Image not found"}, status=404)
 
-        cloudinary.uploader.destroy(image.image_id)
         image.delete()
         return Response({"message": "Image deleted successfully."}, status=204)
 

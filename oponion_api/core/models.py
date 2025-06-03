@@ -110,8 +110,8 @@ class Meeting(models.Model):
 # USERIMAGE
 class UserImage(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="images")
-    image_url = models.URLField()
-    image_id = models.CharField(max_length=200)  # Cloudinary public_id
+    image_data = models.BinaryField()  # Stores the actual image data
+    content_type = models.CharField(max_length=100)  # To store the MIME type
     type = models.CharField(max_length=50, choices=[("profile", "Profile"), ("background", "Background")])
     uploaded_at = models.DateTimeField(auto_now_add=True)
 

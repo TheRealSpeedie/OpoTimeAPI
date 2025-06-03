@@ -54,19 +54,6 @@ INSTALLED_APPS = [
     'corsheaders'
 ]
 
-
-CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': os.getenv('CLOUDNAME'),
-    'API_KEY': os.getenv('CLOUDKEY'),
-    'API_SECRET': os.getenv('CLOUDSECRET'),
-}
-
-cloudinary.config(
-    cloud_name=os.getenv('CLOUDNAME'),
-    api_key=os.getenv('CLOUDKEY'),
-    api_secret=os.getenv('CLOUDSECRET')
-)
-
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "https://opo-time.vercel.app"
