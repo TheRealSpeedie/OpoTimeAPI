@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Task, Invitation, Project, TimeEntry, UserInformation, Meeting, UserImage
+from .models import Task, Invitation, Project, UserInformation, Meeting, UserImage, ProjectTimeEntry, TaskTimeEntry, Shift
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth.models import User
 from django.contrib.auth import get_user_model
@@ -51,12 +51,6 @@ class ProjectSerializer(serializers.ModelSerializer):
             "completed": completed
         }
 
-class TimeEntrySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = TimeEntry
-        fields = '__all__'
-        read_only_fields = ['user']
-
 class UserInformationSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserInformation
@@ -98,5 +92,31 @@ class MeetingSerializer(serializers.ModelSerializer):
         )
         meeting.invited_users.set(invited)
         return meeting
+
+class ProjectTimeEntrySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectTimeEntry
+        fields = '__all__'
+        read_only_fields = ['user']
+
+class TaskTimeEntrySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TaskTimeEntry
+        fields = '__all__'
+        read_only_fields = ['user']
+
+class ShiftSerializer(serializers.ModelSerializer):
+    project_entries = ProjectTimeEntrySerializer(many=True, read_only=True)
+    task_entries = TaskTimeEntrySerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Shift
+        fields = ['id', 'user', 'start_time', 'end_time', 'project_entries', 'task_entries']
+        read_only_fields = ['user']
+
+    def validate(self, data):
+        if data['end_time'] <= data['start_time']:
+            raise serializers.ValidationError("End time must be after start time")
+        return data
 
 

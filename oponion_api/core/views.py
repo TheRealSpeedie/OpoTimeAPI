@@ -6,8 +6,8 @@ from rest_framework import status
 from django.http import JsonResponse
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.views import TokenObtainPairView
-from .serializer import MyTokenObtainPairSerializer, TaskSerializer, InvitationSerializer, ProjectSerializer, TimeEntrySerializer, UserInformationSerializer, UserSelectSerializer, MeetingSerializer, UserImageSerializer
-from .models import Task, Project, Invitation, TimeEntry, UserInformation, Meeting, UserImage
+from .serializer import MyTokenObtainPairSerializer, TaskSerializer, InvitationSerializer, ProjectSerializer, UserInformationSerializer, UserSelectSerializer, MeetingSerializer, UserImageSerializer, ShiftSerializer, ProjectTimeEntrySerializer, TaskTimeEntrySerializer
+from .models import Task, Project, Invitation, UserInformation, Meeting, UserImage, Shift, ProjectTimeEntry, TaskTimeEntry
 
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.models import User
@@ -73,60 +73,6 @@ class RegisterView(APIView):
             "access": str(refresh.access_token)
         }, status=201)
 
-class TimeEntryView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        project_id = request.query_params.get("project_id")
-        user_id = request.query_params.get("user_id")
-        since = request.query_params.get("since")
-
-        if not since:
-            return Response({"error": "since (ISO datetime) is required"}, status=400)
-
-        if since.endswith("Z"):
-            since = since.replace("Z", "+00:00")
-
-        try:
-            since_dt = datetime.fromisoformat(since)
-        except ValueError:
-            return Response({"error": "Invalid datetime format for 'since'"}, status=400)
-
-        entries = TimeEntry.objects.filter(timestamp__gte=since_dt)
-
-        if project_id:
-            entries = entries.filter(task__project__id=project_id) 
-        
-        if user_id:
-            entries = entries.filter(user__id=user_id)
-        else:
-            entries = entries.filter(user=request.user)
-
-        serializer = TimeEntrySerializer(entries, many=True)
-        return Response(serializer.data)
-
-    def post(self, request):
-        serializer = TimeEntrySerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(user=request.user)
-            return Response(serializer.data, status=201)
-        return Response(serializer.errors, status=400)
-
-    def patch(self, request):
-        entry_id = request.data.get("entry_id")
-        entry = get_object_or_404(TimeEntry, id=entry_id, user=request.user)
-
-        serializer = TimeEntrySerializer(entry, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=400)
-
-    def delete(self, request):
-        entry_id = request.query_params.get("entry_id")
-        entry = get_object_or_404(TimeEntry, id=entry_id, user=request.user)
-        entry.delete()
-        return Response({"message": "Time entry deleted."}, status=204)
 
 class ProjectsView(APIView):
     permission_classes = [IsAuthenticated]
@@ -589,5 +535,165 @@ class UserImageView(APIView):
 
         image.delete()
         return Response({"message": "Image deleted successfully."}, status=204)
+
+class ShiftView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        shift_id = request.query_params.get('shift_id')
+        
+        if shift_id:
+            shift = get_object_or_404(Shift, id=shift_id, user=request.user)
+            serializer = ShiftSerializer(shift)
+            return Response(serializer.data)
+        
+        shifts = Shift.objects.filter(user=request.user)
+        serializer = ShiftSerializer(shifts, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = ShiftSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+
+    def put(self, request):
+        shift_id = request.data.get('shift_id')
+        shift = get_object_or_404(Shift, id=shift_id, user=request.user)
+        
+        serializer = ShiftSerializer(shift, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+
+    def patch(self, request):
+        shift_id = request.data.get('shift_id')
+        shift = get_object_or_404(Shift, id=shift_id, user=request.user)
+        
+        serializer = ShiftSerializer(shift, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+
+    def delete(self, request):
+        shift_id = request.query_params.get('shift_id')
+        shift = get_object_or_404(Shift, id=shift_id, user=request.user)
+        shift.delete()
+        return Response(status=204)
+
+class ProjectTimeEntryView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        entry_id = request.query_params.get('entry_id')
+        project_id = request.query_params.get('project_id')
+        shift_id = request.query_params.get('shift_id')
+        
+        if entry_id:
+            entry = get_object_or_404(ProjectTimeEntry, id=entry_id, user=request.user)
+            serializer = ProjectTimeEntrySerializer(entry)
+            return Response(serializer.data)
+        
+        entries = ProjectTimeEntry.objects.filter(user=request.user)
+        
+        if project_id:
+            entries = entries.filter(project_id=project_id)
+        if shift_id:
+            entries = entries.filter(shift_id=shift_id)
+            
+        serializer = ProjectTimeEntrySerializer(entries, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = ProjectTimeEntrySerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+
+    def put(self, request):
+        entry_id = request.data.get('entry_id')
+        entry = get_object_or_404(ProjectTimeEntry, id=entry_id, user=request.user)
+        
+        serializer = ProjectTimeEntrySerializer(entry, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+
+    def patch(self, request):
+        entry_id = request.data.get('entry_id')
+        entry = get_object_or_404(ProjectTimeEntry, id=entry_id, user=request.user)
+        
+        serializer = ProjectTimeEntrySerializer(entry, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+
+    def delete(self, request):
+        entry_id = request.query_params.get('entry_id')
+        entry = get_object_or_404(ProjectTimeEntry, id=entry_id, user=request.user)
+        entry.delete()
+        return Response(status=204)
+
+class TaskTimeEntryView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        entry_id = request.query_params.get('entry_id')
+        task_id = request.query_params.get('task_id')
+        shift_id = request.query_params.get('shift_id')
+        
+        if entry_id:
+            entry = get_object_or_404(TaskTimeEntry, id=entry_id, user=request.user)
+            serializer = TaskTimeEntrySerializer(entry)
+            return Response(serializer.data)
+        
+        entries = TaskTimeEntry.objects.filter(user=request.user)
+        
+        if task_id:
+            entries = entries.filter(task_id=task_id)
+        if shift_id:
+            entries = entries.filter(shift_id=shift_id)
+            
+        serializer = TaskTimeEntrySerializer(entries, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = TaskTimeEntrySerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+
+    def put(self, request):
+        entry_id = request.data.get('entry_id')
+        entry = get_object_or_404(TaskTimeEntry, id=entry_id, user=request.user)
+        
+        serializer = TaskTimeEntrySerializer(entry, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+
+    def patch(self, request):
+        entry_id = request.data.get('entry_id')
+        entry = get_object_or_404(TaskTimeEntry, id=entry_id, user=request.user)
+        
+        serializer = TaskTimeEntrySerializer(entry, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+
+    def delete(self, request):
+        entry_id = request.query_params.get('entry_id')
+        entry = get_object_or_404(TaskTimeEntry, id=entry_id, user=request.user)
+        entry.delete()
+        return Response(status=204)
 
 

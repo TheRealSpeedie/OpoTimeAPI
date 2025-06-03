@@ -1,6 +1,12 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
-from .views import RegisterView, TimeEntryView, MyTokenObtainPairView, ProjectsView, TaskView, InvitationView, UserSearchView, UserInformationView, MyTokenRefreshView, list_invitable_users, invite_user, confirm_invitation, invited_users_with_status, MeetingView, reset_password, UserImageView 
+from .views import (
+    RegisterView, MyTokenObtainPairView, ProjectsView, 
+    TaskView, InvitationView, UserSearchView, UserInformationView, 
+    MyTokenRefreshView, list_invitable_users, invite_user, confirm_invitation, 
+    invited_users_with_status, MeetingView, reset_password, UserImageView,
+    ShiftView, ProjectTimeEntryView, TaskTimeEntryView
+)
 
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
@@ -18,7 +24,6 @@ urlpatterns = [
     path("users/selectable/", list_invitable_users, name="user-selectable"),
     path('invitation/', InvitationView.as_view()),
     path('refresh/', MyTokenRefreshView.as_view(), name="token_refresh"),
-    path('time/', TimeEntryView.as_view()),
     path('info/', UserInformationView.as_view()),
     path('meeting/', MeetingView.as_view()),
     path("invitations/send/", invite_user, name="invite-user"),
@@ -26,4 +31,7 @@ urlpatterns = [
     path("projects/<int:project_id>/invited-users/", invited_users_with_status),
     path("password/reset", reset_password),
     path('userImage/', UserImageView.as_view()),
+    path('shifts/', ShiftView.as_view()),
+    path('project-time/', ProjectTimeEntryView.as_view()),
+    path('task-time/', TaskTimeEntryView.as_view()),
 ] 

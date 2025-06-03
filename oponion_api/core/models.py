@@ -49,16 +49,37 @@ class Task(models.Model):
     def __str__(self):
         return f"[{self.status} | {self.progress}%] {self.text} ({self.priority}) → {self.assigned_to.username}"
 
-# TIME ENTRY
-class TimeEntry(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="entries")
-    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="entries")
-    timestamp = models.DateTimeField(auto_now_add=True)
-    type = models.CharField(max_length=10, choices=[("start", "Start"), ("end", "End")])
+# SHIFT
+class Shift(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="shifts")
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField()
 
     def __str__(self):
-        return f"{self.user.username} - {self.project.name} - {self.type} at {self.timestamp}"
+        return f"{self.user.username}: {self.start_time} - {self.end_time}"
+
+# PROJECT TIME ENTRY
+class ProjectTimeEntry(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="project_time_entries")
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="time_entries")
+    shift = models.ForeignKey(Shift, on_delete=models.CASCADE, related_name="project_entries")
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField()
+    description = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.project.name} ({self.start_time} - {self.end_time})"
+
+# TASK TIME ENTRY   
+class TaskTimeEntry(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="task_time_entries")
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="time_entries")
+    shift = models.ForeignKey(Shift, on_delete=models.CASCADE, related_name="task_entries")
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField()
+
+    def __str__(self):
+        return f"{self.user.username} - {self.task.text} ({self.start_time} - {self.end_time})"
 
 # INVITATION
 class Invitation(models.Model):
