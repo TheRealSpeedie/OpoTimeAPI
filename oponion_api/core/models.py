@@ -29,6 +29,7 @@ class Project(models.Model):
     deadline = models.DateField(null=True, blank=True)
     invited_users = models.ManyToManyField(User, related_name="invited_projects", blank=True)
     color = models.CharField(max_length=7, default="#3B82F6")
+    description = models.TextField(blank=True)
 
     def __str__(self):
         return self.name
