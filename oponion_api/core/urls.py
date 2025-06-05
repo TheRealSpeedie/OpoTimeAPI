@@ -5,7 +5,7 @@ from .views import (
     TaskView, InvitationView, UserSearchView, UserInformationView, 
     MyTokenRefreshView, list_invitable_users, invite_user, confirm_invitation, 
     invited_users_with_status, MeetingView, reset_password, UserImageView,
-    ShiftView, ProjectTimeEntryView, TaskTimeEntryView
+    ShiftView, ProjectTimeEntryView, TaskTimeEntryView, infoForDisplay
 )
 
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
@@ -25,6 +25,7 @@ urlpatterns = [
     path('invitation/', InvitationView.as_view()),
     path('refresh/', MyTokenRefreshView.as_view(), name="token_refresh"),
     path('info/', UserInformationView.as_view()),
+    path('infoForDisplay/', infoForDisplay, name="infoForDisplay"),
     path('meeting/', MeetingView.as_view()),
     path("invitations/send/", invite_user, name="invite-user"),
     path("invitations/confirm/<uuid:token>/", confirm_invitation, name="confirm-invitation"),

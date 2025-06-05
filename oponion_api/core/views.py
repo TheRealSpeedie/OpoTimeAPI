@@ -461,6 +461,32 @@ def reset_password(request):
     user.save()
     return Response({"message": "Passwort wurde erfolgreich geändert."})
 
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def infoForDisplay(request):
+    userID = request.query_params.get("userID")
+
+    if not userID:
+        return Response({"error": "userID sind erforderlich."}, status=400)
+
+    user = get_object_or_404(User, id=userID)
+    
+    profile_image = UserImage.objects.filter(user=user, type="profile").last()
+    image_data = None
+    
+    if profile_image:
+        base64_image = base64.b64encode(profile_image.image_data).decode('utf-8')
+        image_data = f"data:{profile_image.content_type};base64,{base64_image}"
+
+    response_data = {
+        "email": user.email,
+        "username": user.username,
+        "profile_image": image_data
+    }
+
+    return Response(response_data)
+
 class UserImageView(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
