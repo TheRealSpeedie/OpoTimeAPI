@@ -91,20 +91,20 @@ class ProjectsView(APIView):
             serializer = ProjectSerializer(project)
             return Response(serializer.data)
 
-        projects = Project.objects.filter(user=request.user) | request.user.invited_projects.all()
+        projects = Project.objects.filter(creator=request.user) | request.user.invited_projects.all()
         serializer = ProjectSerializer(projects.distinct(), many=True)
         return Response(serializer.data)
 
     def post(self, request):
         serializer = ProjectSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(user=request.user)
+            serializer.save(creator=request.user)
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
 
     def patch(self, request):
         project_id = request.data.get("project_id")
-        project = get_object_or_404(Project, id=project_id, user=request.user)
+        project = get_object_or_404(Project, id=project_id, creator=request.user)
 
         serializer = ProjectSerializer(project, data=request.data, partial=True)
         if serializer.is_valid():
@@ -115,7 +115,7 @@ class ProjectsView(APIView):
 
     def delete(self, request):
         project_id = request.query_params.get("project_id")
-        project = get_object_or_404(Project, id=project_id, user=request.user)
+        project = get_object_or_404(Project, id=project_id, creator=request.user)
         project.delete()
         return Response({"message": "Project deleted successfully."}, status=204)
 
