@@ -298,15 +298,22 @@ class UserInformationView(APIView):
             return Response({"error": "User information not found."}, status=404)
 
 class MyTokenRefreshView(TokenRefreshView):
-    def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        data = serializer.validated_data
+    permission_classes = [AllowAny]
 
-        return Response({
-            "access": data["access"],
-            "refresh": data.get("refresh", request.data.get("refresh"))  # <-- wichtig
-        })
+    def post(self, request, *args, **kwargs):
+        try:
+            refresh_token = request.data.get('refresh')
+            if not refresh_token:
+                return Response({'error': 'Refresh token is required'}, status=400)
+
+            token = RefreshToken(refresh_token)
+            data = {
+                'access': str(token.access_token),
+                'refresh': str(token)
+            }
+            return Response(data)
+        except Exception as e:
+            return Response({'error': str(e)}, status=401)
 
 class MeetingView(APIView):
     permission_classes = [IsAuthenticated]
