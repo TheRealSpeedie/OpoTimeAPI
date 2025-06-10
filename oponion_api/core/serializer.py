@@ -115,8 +115,9 @@ class ShiftSerializer(serializers.ModelSerializer):
         read_only_fields = ['user']
 
     def validate(self, data):
-        if data['end_time'] <= data['start_time']:
-            raise serializers.ValidationError("End time must be after start time")
+        if 'end_time' in data and data['end_time'] is not None:
+            if data['end_time'] <= data['start_time']:
+                raise serializers.ValidationError("End time must be after start time")
         return data
 
 
