@@ -77,7 +77,7 @@ class ProjectTimeEntry(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="time_entries")
     shift = models.ForeignKey(Shift, on_delete=models.CASCADE, related_name="project_entries")
     start_time = models.DateTimeField()
-    end_time = models.DateTimeField()
+    end_time = models.DateTimeField(null=True, blank=True)
     description = models.TextField(blank=True)
 
     def __str__(self):
